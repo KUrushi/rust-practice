@@ -1,7 +1,6 @@
 use clap::Clap;
 use std::fs::File;
-use std::io::BufRead;
-use std::io::BufReader;
+use std::io::{stdin, BufRead, BufReader};
 
 #[derive(Clap, Debug)]
 #[clap(
@@ -36,7 +35,33 @@ impl RpnCalculator {
     }
 
     pub fn eval_inner(&self, tokens: &mut Vec<&str>) -> i32 {
-        0
+        let mut stack = Vec::new();
+
+        while let Some(token) = tokens.pop() {
+            if let Ok(x) = token.parse::<i32>() {
+                stack.push(x)
+            } else {
+                let y = stack.pop().expect("invalid syntax");
+                let x = stack.pop().expect("invalid syntax");
+                let res = match token {
+                    "+" => x + y,
+                    "-" => x - y,
+                    "*" => x * y,
+                    "/" => x / y,
+                    "%" => x % y,
+                    _ => panic!("invalid token"),
+                };
+                stack.push(res);
+            }
+            if self.0 {
+                println!("{:?} {:?}", tokens, stack);
+            }
+        }
+        if stack.len() == 1 {
+            stack[0]
+        } else {
+            panic!("Invalid syntax")
+        }
     }
 }
 
@@ -45,7 +70,8 @@ fn run<R: BufRead>(reader: R, verbose: bool) {
 
     for line in reader.lines() {
         let line = line.unwrap();
-        println!("{}", line);
+        let answer = calc.eval(&line);
+        println!("{}", answer);
     }
 }
 
@@ -61,6 +87,27 @@ fn main() {
         let reader = BufReader::new(f);
         run(reader, opts.verbose);
     } else {
-        println!("No file is specified");
+        let stdin = stdin();
+        let reader = stdin.lock();
+        run(reader, opts.verbose);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ok() {
+        let calc = RpnCalculator::new(false);
+        assert_eq!(calc.eval("5"), 5);
+        assert_eq!(calc.eval("50"), 50);
+        assert_eq!(calc.eval("-50"), -50);
+
+        assert_eq!(calc.eval("2 3 +"), 5);
+        assert_eq!(calc.eval("2 3 *"), 6);
+        assert_eq!(calc.eval("2 3 -"), -1);
+        assert_eq!(calc.eval("2 3 /"), 0);
+        assert_eq!(calc.eval("2 3 %"), 2);
     }
 }
