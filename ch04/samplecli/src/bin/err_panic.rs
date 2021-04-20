@@ -3,8 +3,8 @@ enum MyError {
     Num(std::num::ParseIntError),
 }
 
-impl fmt::Display for MyError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
+impl std::fmt::Display for MyError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             MyError::Io(cause) => write!(f, "I/O Error: {}", cause),
             MyError::Num(cause) => write!(f, "Parse Error: {}", cause),
@@ -12,14 +12,15 @@ impl fmt::Display for MyError {
     }
 }
 
-fn get_int_from_file() -> Result<i32, String> {
+fn get_int_from_file() -> Result<i32, MyError> {
     let path = "number.txt";
-    let num_str = std::fs::read_to_string(path).map_error(|e| MyError::Io(e))?;
+    let num_str = std::fs::read_to_string(path).map_err(|e| MyError::Io(e))?;
+
     num_str
         .trim()
         .parse::<i32>()
         .map(|t| t * 2)
-        .map_error(|e| MyError::Num(e))
+        .map_err(|e| MyError::Num(e))
 }
 
 fn main() {
