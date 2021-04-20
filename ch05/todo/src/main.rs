@@ -21,7 +21,7 @@ enum MyError {
 impl ResponseError for MyError {}
 
 #[get("/")]
-async fn index() -> Result<HttpResponse, actix_web::Error> {
+async fn index() -> Result<HttpResponse, MyError> {
     let mut entries = Vec::new();
     entries.push(TodoEntry {
         id: 1,
@@ -29,7 +29,7 @@ async fn index() -> Result<HttpResponse, actix_web::Error> {
     });
     entries.push(TodoEntry {
         id: 2,
-        text: "SEcond entry".to_string(),
+        text: "Second entry".to_string(),
     });
     let html = IndexTemplate { entries };
     let response_body = html.render()?;
